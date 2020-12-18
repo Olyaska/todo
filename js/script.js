@@ -1,69 +1,91 @@
 'use strict';
 
-const todoControl = document.querySelector('.todo-control'),
-    headerInput = document.querySelector('.header-input'),
-    todoList = document.querySelector('.todo-list'),
-    todoCompleted = document.querySelector('.todo-completed');
-let todoData = [];
-
-const render = function() {
-    todoList.textContent = '';
-    todoCompleted.textContent = '';
-    
-    todoData.forEach(function(item, i) {
-        const li = document.createElement('li');
-        li.classList.add('todo-item');
-        li.innerHTML = `<span class="text-todo">${item.value}</span>
-                        <div class="todo-buttons">
-                            <button class="todo-remove"></button>
-                            <button class="todo-complete"></button>
-                        </div>`;
-        if (item.completed) {
-            todoCompleted.append(li);
-        } else {
-            todoList.append(li);
-        }
-
-        const btnTodoComplete = li.querySelector('.todo-complete');
-        btnTodoComplete.addEventListener('click', function() {
-            item.completed = !item.completed;
-            render();
-        });
-
-        const btnTodoRemove = li.querySelector('.todo-remove'); //5
-        btnTodoRemove.addEventListener('click', function() {
-            todoData.splice(i, 1);
-            render();
-        });
-    });
-
-    localStorage.todoData = JSON.stringify(todoData); //6
-};
-
-const init = function() { //6
-    if (localStorage.todoData){
-        todoData = JSON.parse(localStorage.todoData);
-    } else {
-        localStorage.todoData = JSON.stringify([]);
+class ToDo {
+    constructor(container, form, input, todoList, todoComplited) {
+        this.container = document.querySelector(container);
+        this.form = document.querySelector(form);
+        this.input = document.querySelector(input);
+        this.todoList = document.querySelector(todoList);
+        this.todoComplited = document.querySelector(todoComplited);
+        this.todoData = new Map(JSON.parse(localStorage.getItem('todoList')));
     }
-    render();
-};
 
-todoControl.addEventListener('submit', function(event) {
-    event.preventDefault();
+    addToStorage() {
+        localStorage.setItem('todoList', JSON.stringify([...this.todoData]));
+    }
 
-    if (headerInput.value.trim()) { //3
-        const newTodo = {
-            value: headerInput.value,
-            completed: false
-        };
-        console.log(todoData);
-        todoData.push(newTodo);
-        
+    render() {
+        this.todoList.textContent = '';
+        this.todoComplited.textContent = '';
+        this.todoData.forEach(this.createItem, this);
+        this.addToStorage();
+    }
+
+    createItem(todo) {
+        const li = document.createElement('li');
+        li.key = todo.key;
+        li.classList.add('todo-item');
+        li.insertAdjacentHTML('beforeend', `
+                <span class="text-todo">${todo.value}</span>
+				<div class="todo-buttons">
+					<button class="todo-remove"></button>
+					<button class="todo-complete"></button>
+				</div>
+        `);
+
+        if (todo.completed) {
+            this.todoComplited.append(li);
+        } else {
+            this.todoList.append(li);
+        }
+    }
+    addTodo(e) {
+        e.preventDefault();
+        if (this.input.value.trim()) {
+            const newTodo = {
+                value: this.input.value,
+                completed: false,
+                key: this.generateKey(),
+            };
+            this.todoData.set(newTodo.key, newTodo);
+            this.render();
+            this.input.value = '';
+        } else {
+            alert('Поле не может быть пустым!');
+        }
+    }
+
+
+    generateKey() {
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
+
+    deleteItem(key) {
+        this.todoData.delete(key);
+        this.render();
+    }
     
-        headerInput.value = ''; //4
-        render();
-    }    
-});
+    completedItem(key) {
+        this.todoData.get(key).completed = !this.todoData.get(key).completed;
+        this.render();
+    }
 
-init();
+    handler(e) {
+        const key = e.target.closest('li').key;
+        if (e.target.classList.contains('todo-remove')) {
+            this.deleteItem(key);
+        }
+        if (e.target.classList.contains('todo-complete')) {
+            this.completedItem(key);
+        }
+    }
+
+    init() {
+        this.form.addEventListener('submit',  this.addTodo.bind(this));
+        this.container.addEventListener('click', this.handler.bind(this));
+        this.render();
+    }
+}
+
+const todo = new ToDo('.todo-container', '.todo-control', '.header-input', '.todo-list', '.todo-completed');
+todo.init();
