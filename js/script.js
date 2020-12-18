@@ -27,7 +27,7 @@ class ToDo {
         this.addToStorage();
     }
 
-    animateAdd() { // этого в задании не было, но я поздно это поняла =))
+    animateAdd() { 
         const item = document.querySelector('[style="opacity: 0;"]');
         let count = 0,
             animInterval;
@@ -43,7 +43,7 @@ class ToDo {
         };
         animInterval = requestAnimationFrame(animation);
     }
-    animateDelete(item) {
+    animate(item, action) { // 1.
         item.style.opacity = '1';
         let count = 1,
             animInterval;
@@ -55,25 +55,12 @@ class ToDo {
                 item.style.opacity = count;
             } else {
                 cancelAnimationFrame(animInterval);
-                this.deleteItem(item.key);
-            }
-        };
-        animInterval = requestAnimationFrame(animation);
-    }
-    animateRemove(item) {
-        item.style.opacity = '1';
-        let count = 1,
-            animInterval;
-
-        const animation = () => {
-            animInterval = requestAnimationFrame(animation);
-            count = count - 0.05;
-            if (count >= -0.05) {
-                item.style.opacity = count;
-            } else {
-                cancelAnimationFrame(animInterval);
-                this.animItem = item.key;
-                this.completedItem(item.key);
+                if (action === 'delete') {
+                    this.deleteItem(item.key);
+                } else {
+                    this.animItem = item.key;
+                    this.completedItem(item.key);
+                }
             }
         };
         animInterval = requestAnimationFrame(animation);
@@ -86,12 +73,12 @@ class ToDo {
             li.style.opacity = '0';
         }
         li.insertAdjacentHTML('beforeend', `
-                <span class="text-todo">${todo.value}</span>
-                <div class="todo-buttons">
-                    <button class="todo-edit"></button>
-					<button class="todo-remove"></button>
-					<button class="todo-complete"></button>
-				</div>
+            <span class="text-todo">${todo.value}</span>
+            <div class="todo-buttons">
+                <button class="todo-edit"></button>
+                <button class="todo-remove"></button>
+                <button class="todo-complete"></button>
+            </div>
         `);
 
         if (todo.completed) {
@@ -131,14 +118,28 @@ class ToDo {
         this.render();
     }
 
+    editItem(item) { // 2.
+        const removable = item.querySelector('span'),
+            text = removable.textContent;
+
+        removable.innerHTML = '<input> Сохранить: enter';
+        const input = removable.querySelector('input');
+        input.value = text;
+        input.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                removable.textContent = input.value;
+                this.todoData.get(item.key).value = input.value;
+            }
+        });
+    }
     handler(e) {
             if (e.target.classList.contains('todo-remove')) {
-                this.animateDelete(e.target.closest('li'));
-                // this.deleteItem(e.target.closest('li').key);
+                this.animate(e.target.closest('li'), 'delete');
             } else if (e.target.classList.contains('todo-complete')) {
-                this.animateRemove(e.target.closest('li'));
-                // this.completedItem(e.target.closest('li').key);
-            }             
+                this.animate(e.target.closest('li'), 'remove');
+            } else if (e.target.classList.contains('todo-edit')) {
+                this.editItem(e.target.closest('li'));
+            }
     }
 
     init() {
@@ -150,6 +151,3 @@ class ToDo {
 
 const todo = new ToDo('.todo-container', '.todo-control', '.header-input', '.todo-list', '.todo-completed');
 todo.init();
-// let a = new Map(null);
-// console.log(a);
-// console.log(JSON.parse(localStorage.getItem('todoList')));
