@@ -119,6 +119,7 @@ class ToDo {
     }
 
     editItem(item) { // 2.
+        item.querySelector('.todo-edit').style.display = 'none';
         const removable = item.querySelector('span'),
             text = removable.textContent;
 
@@ -129,6 +130,7 @@ class ToDo {
             if (e.key === 'Enter') {
                 removable.textContent = input.value;
                 this.todoData.get(item.key).value = input.value;
+                item.querySelector('.todo-edit').style.display = 'block';
             }
         });
     }
