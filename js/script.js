@@ -71,13 +71,11 @@ class ToDo {
     }
 
     handler(e) {
-        const key = e.target.closest('li').key;
-        if (e.target.classList.contains('todo-remove')) {
-            this.deleteItem(key);
-        }
-        if (e.target.classList.contains('todo-complete')) {
-            this.completedItem(key);
-        }
+            if (e.target.classList.contains('todo-remove')) {
+                this.deleteItem(e.target.closest('li').key);
+            } else if (e.target.classList.contains('todo-complete')) {
+                this.completedItem(e.target.closest('li').key);
+            }             
     }
 
     init() {
